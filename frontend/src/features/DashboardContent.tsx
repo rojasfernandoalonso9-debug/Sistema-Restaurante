@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowUpRight, Clock3, DollarSign, ShoppingBag, Table2, Users } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { api } from '../lib/api';
+import { api, isDemoMode } from '../lib/api';
 
 type RecentOrder = { id:number; tableName:string; status:string; total:number; createdAt:string };
 type BestProduct = { name:string; quantity:number; revenue:number };
@@ -12,6 +12,7 @@ const orderStatus:Record<string,string>={PENDING:'Pendiente',PREPARING:'Preparan
 
 export function DashboardContent(){
  const [metrics,setMetrics]=useState(blank);const[connected,setConnected]=useState(false);
+ const demoMode=isDemoMode();
  useEffect(()=>{let alive=true;api.get<Metrics>('/dashboard/metrics').then(r=>{if(alive){setMetrics(r.data);setConnected(true)}}).catch(()=>{if(alive)setConnected(false)});return()=>{alive=false}},[]);
  const cards=[
   {label:'Ventas de hoy',value:connected?money(metrics.todaySales):'—',foot:`${metrics.salesCount} ventas registradas`,icon:DollarSign,tint:'green'},
@@ -21,7 +22,7 @@ export function DashboardContent(){
  ];
  return <>
   <div className="page-heading"><div><div className="eyebrow">RESUMEN DEL RESTAURANTE</div><h1>Panel de operación <span>✦</span></h1><p>Indicadores calculados a partir de la actividad registrada.</p></div><button className="button button-primary" onClick={()=>window.location.href='/pedidos'}><ShoppingBag size={16}/> Nuevo pedido</button></div>
-  <div className={`connection-banner ${connected?'online':'offline'}`}><span className="connection-dot"/>{connected?'Conectado · datos actuales del restaurante':'No se pudo conectar. Inicia sesión y confirma que backend y MySQL estén activos.'}</div>
+  <div className={`connection-banner ${connected?'online':'offline'}`}><span className="connection-dot"/>{demoMode?'Modo DEMO · datos ficticios guardados en este navegador':connected?'Conectado · datos actuales del restaurante':'No se pudo conectar. Inicia sesión y confirma que backend y MySQL estén activos.'}</div>
   <section className="stats-grid">{cards.map(card=><article className="stat-card" key={card.label}><div className="stat-top"><span>{card.label}</span><div className={`stat-icon ${card.tint}`}><card.icon size={19}/></div></div><strong className="stat-value">{card.value}</strong><div className="stat-foot"><span className="stat-change"><ArrowUpRight size={14}/></span><span>{card.foot}</span></div></article>)}</section>
   <section className="dashboard-grid"><article className="panel sales-panel"><div className="panel-heading"><div><h2>Resumen de ventas</h2><p>Últimos siete días</p></div></div><div className="chart-legend"><span/><b>Ventas completadas</b><strong>{connected?money(metrics.weekTotal):'—'}</strong></div><div className="chart-wrap"><ResponsiveContainer width="100%" height="100%"><AreaChart data={metrics.salesByDay} margin={{top:12,right:12,left:-18,bottom:0}}><defs><linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#059669" stopOpacity={0.18}/><stop offset="95%" stopColor="#059669" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 5" vertical={false} stroke="var(--line)"/><XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize:12,fill:'var(--muted)'}} dy={10}/><YAxis axisLine={false} tickLine={false} tick={{fontSize:12,fill:'var(--muted)'}} tickFormatter={v=>`S/${v}`}/><Tooltip formatter={v=>[money(Number(v)),'Ventas']} contentStyle={{borderRadius:12,border:'1px solid var(--line)',background:'var(--surface)'}}/><Area type="monotone" dataKey="sales" stroke="#059669" strokeWidth={2.5} fill="url(#salesGradient)"/></AreaChart></ResponsiveContainer></div></article>
    <article className="panel activity-panel"><div className="panel-heading"><div><h2>Actividad reciente</h2><p>Últimos pedidos creados</p></div><button className="text-button" onClick={()=>window.location.href='/pedidos'}>Ver pedidos →</button></div><div className="recent-activity">{metrics.recentOrders.slice(0,4).map(order=><div className="activity-row" key={order.id}><div className="empty-icon"><Clock3 size={16}/></div><div><strong>Pedido #{order.id} · {order.tableName}</strong><small>{new Date(order.createdAt).toLocaleString('es-PE')}</small></div><span className={`status-pill status-${order.status.toLowerCase()}`}>{orderStatus[order.status]??order.status}</span></div>)}{metrics.recentOrders.length===0&&<div className="empty-activity"><div className="empty-icon"><Clock3 size={20}/></div><strong>Aún no hay actividad</strong><span>Los pedidos aparecerán aquí.</span></div>}</div><div className="quick-stats"><div><span><ArrowUpRight size={14}/></span><small>Ingresos esta semana</small><b>{connected?money(metrics.weekTotal):'—'}</b></div><div><span><ShoppingBag size={14}/></span><small>Pedidos activos</small><b>{metrics.pendingOrders}</b></div></div></article></section>

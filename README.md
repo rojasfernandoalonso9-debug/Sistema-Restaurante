@@ -56,6 +56,16 @@ Aplicación web de gestión para centralizar la operación diaria de un restaura
 
 La API escucha en `http://localhost:8080/api`. Para cambiar el origen, define `VITE_API_URL` en `frontend/.env.local` y `CORS_ORIGIN` para el backend.
 
+## Demo pública en Netlify
+
+El despliegue de Netlify compila el frontend con `VITE_DEMO_MODE=true`, definido en `netlify.toml`. En ese modo se entra directamente al sistema, sin cuenta ni backend: el cliente API utiliza exclusivamente datos ficticios guardados en `localStorage` y no envía solicitudes al servidor. Cuentas y personal no están disponibles en la demo, los cobros son simulados y los cambios solo existen en el navegador que los realizó.
+
+1. Publica este repositorio en GitHub y, en Netlify, selecciona **Add new site > Import an existing project** para conectarlo.
+2. Deja que Netlify lea `netlify.toml`. La configuración usa `frontend` como directorio base, `npm run build` como comando y `dist` como directorio publicado.
+3. Despliega. La regla SPA de `netlify.toml` permite abrir y recargar directamente las rutas de React.
+
+No se necesita configurar URL, credenciales ni servidor backend para este despliegue. Para probar localmente el modo demo, ejecuta `npm run dev` desde `frontend` y entra por **Entrar a la demostración** o navega a `/demo`. Para usar la autenticación y API existentes en desarrollo, no actives ese modo y configura `VITE_API_URL` como se indica arriba. Cada navegador conserva sus propios cambios; **Reiniciar datos de prueba** restaura el conjunto inicial de demostración.
+
 ### Base de datos con Docker
 
 Define `DB_PASSWORD` y `MYSQL_ROOT_PASSWORD` en el entorno local antes de ejecutar `docker compose up -d mysql`. Compose ejecuta `database/schema.sql` al inicializar el volumen. Los archivos de ejemplo no contienen credenciales válidas.
